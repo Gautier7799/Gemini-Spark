@@ -33,6 +33,41 @@ jobs:
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
+      # تأمين وجود جميع الملفات الأساسية لتجنب أي أخطاء AAPT
+      - name: Ensure Required Resources Exist
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
+        run: |
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/mipmap-anydpi-v26
+          
+          # تأمين ملف strings.xml
+          if [ ! -f "app/src/main/res/values/strings.xml" ]; then
+            cat <<EOF > app/src/main/res/values/strings.xml
+          <resources>
+              <string name="app_name">Gemini Spark</string>
+          </resources>
+          EOF
+          fi
+          
+          # تأمين ملف themes.xml
+          if [ ! -f "app/src/main/res/values/themes.xml" ]; then
+            cat <<EOF > app/src/main/res/values/themes.xml
+          <resources>
+              <style name="Theme.MyApplication" parent="android:Theme.Material.Light.NoActionBar" />
+          </resources>
+          EOF
+          fi
+
+          # تأمين ملف الأيقونة المفقود (لتجاوز الخطأ فقط، وإذا وجد الملف الأصلي فلن يمسحه)
+          if [ ! -f "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" ]; then
+            cat <<EOF > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@android:color/white"/>
+          </adaptive-icon>
+          EOF
+          fi
+
       - name: Setup Environment Files
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
