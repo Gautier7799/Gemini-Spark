@@ -22,31 +22,42 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # تثبيت وضبط Gradle الكامل على بيئة GitHub
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      # العثور على المجلد الذي يحتوي على settings.gradle.kts تلقائياً
+      - name: Locate Project and Setup Gradle
+        id: locate_project
+        run: |
+          SETTINGS_FILE=$(find . -maxdepth 3 -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "::error::Could not find settings.gradle[.kts] anywhere in the repository!"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+          echo "Found Android project at: $PROJECT_DIR"
+          echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
-      # إعادة توليد ملفات Gradle Wrapper كاملة مع الـ JAR لضمان سلامتها
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.8
+      # توليد أو التأكد من ملفات الـ Wrapper داخل مجلد المشروع
+      - name: Prepare Gradle Wrapper
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
+        run: |
+          gradle wrapper --gradle-version 8.8
+          chmod +x gradlew
 
-      - name: Make Gradlew Executable
-        run: chmod +x gradlew
-
-      # إنشاء ملف .env للمفاتيح
+      # إنشاء ملف .env للمفاتيح داخل مجلد المشروع
       - name: Create .env file
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
           touch .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" >> .env
 
       # بناء ملف APK بنجاح
       - name: Build APK with Gradle
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # رفع ملف الـ APK النهائي لتنزيله مباشرة
+      # رفع ملف الـ APK الناتج كـ Artifact لتنزيله فوراً
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Gemini-Spark-Debug-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ steps.locate_project.outputs.project_dir }}/app/build/outputs/apk/debug/*.apk
           retention-days: 14
