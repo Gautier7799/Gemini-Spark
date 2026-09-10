@@ -22,39 +22,48 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # العثور على المجلد الذي يحتوي على settings.gradle.kts تلقائياً
-      - name: Locate Project and Setup Gradle
+      - name: List Repository Contents and Locate Project
         id: locate_project
         run: |
-          SETTINGS_FILE=$(find . -maxdepth 3 -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+          echo "=== محتويات المستودع الحالية ==="
+          ls -la
+          echo "==============================="
+          
+          # البحث بعمق عن ملف settings.gradle.kts أو settings.gradle
+          SETTINGS_FILE=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+          
           if [ -z "$SETTINGS_FILE" ]; then
-            echo "::error::Could not find settings.gradle[.kts] anywhere in the repository!"
+            echo "::error::ملفات المشروع غير موجودة في المستودع! يرجى رفع مجلد app وملفات gradle إلى GitHub."
+            find . -type f | head -n 30
             exit 1
           fi
+
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "Found Android project at: $PROJECT_DIR"
+          echo "تم العثور على المشروع في المسار: $PROJECT_DIR"
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
-      # توليد أو التأكد من ملفات الـ Wrapper داخل مجلد المشروع
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Prepare Gradle Wrapper
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
-          gradle wrapper --gradle-version 8.8
+          if [ ! -f "gradlew" ] || [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "جاري إنشاء gradle wrapper..."
+            gradle wrapper --gradle-version 8.8
+          fi
           chmod +x gradlew
 
-      # إنشاء ملف .env للمفاتيح داخل مجلد المشروع
       - name: Create .env file
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
           touch .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" >> .env
 
-      # بناء ملف APK بنجاح
       - name: Build APK with Gradle
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # رفع ملف الـ APK الناتج كـ Artifact لتنزيله فوراً
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
