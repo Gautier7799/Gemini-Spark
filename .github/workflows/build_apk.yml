@@ -5,11 +5,11 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch: # يسمح لك بتشغيل البناء يدوياً بضغطة زر من GitHub
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً
 
 jobs:
   build:
-    name: Build Debug and Release APK
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -21,23 +21,27 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      # تجهيز وإعداد Gradle Wrapper تلقائياً حتى لو لم يكن ملف gradlew موجوداً في المشروع
+      - name: Ensure Gradle Wrapper Exists
+        run: |
+          if [ ! -f "gradlew" ]; then
+            echo "gradlew not found. Generating gradle wrapper..."
+            gradle wrapper
+          fi
+          chmod +x gradlew
 
-      # إعداد ملف البيئة للمفتاح (اختياري، يسحب المفتاح إذا وضعته في Secrets)
+      # إنشاء ملف .env للمفاتيح
       - name: Create .env file
         run: |
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" > .env
+          touch .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" >> .env
 
-      - name: Make Gradlew Executable
-        run: chmod +x gradlew
-
+      # بناء ملف APK بنجاح
       - name: Build APK with Gradle
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # رفع ملف الـ APK النهائي لصفحة GitHub لتتمكن من تحميله مباشرة
+      # رفع ملف الـ APK الناتج كـ Artifact لتنزيله فوراً
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
