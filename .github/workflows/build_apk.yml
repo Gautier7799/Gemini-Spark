@@ -33,7 +33,6 @@ jobs:
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
-      # إنشاء ملفات البيئة فوراً في المجلد لتفادي أي نقص
       - name: Setup Environment Files
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
@@ -46,9 +45,8 @@ jobs:
       - name: Prepare Gradle Wrapper
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
-          if [ ! -f "gradlew" ] || [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            gradle wrapper --gradle-version 8.8
-          fi
+          # تم تحديث الإصدار هنا إلى 8.10.2 ليتوافق تماماً مع إضافة الأندرويد
+          gradle wrapper --gradle-version 8.10.2
           chmod +x gradlew
 
       - name: Build APK with Gradle
