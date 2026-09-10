@@ -38,11 +38,10 @@ android {
     }
 }
 
-// ضبط إعدادات secrets لتكون اختيارية وبدون إجبار وجود ملف .env.example
+// تم إصلاح الخطأ هنا: أرجعنا اسم الملف بدلاً من القيمة الفارغة ""
 secrets {
     propertiesFileName = ".env"
-    defaultPropertiesFileName = ""
-    ignoreList.add("keyToIgnore")
+    defaultPropertiesFileName = ".env.example"
 }
 
 dependencies {
