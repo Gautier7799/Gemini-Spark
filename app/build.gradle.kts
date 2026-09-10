@@ -38,9 +38,11 @@ android {
     }
 }
 
+// ضبط إعدادات secrets لتكون اختيارية وبدون إجبار وجود ملف .env.example
 secrets {
     propertiesFileName = ".env"
-    defaultPropertiesFileName = ".env.example"
+    defaultPropertiesFileName = ""
+    ignoreList.add("keyToIgnore")
 }
 
 dependencies {
