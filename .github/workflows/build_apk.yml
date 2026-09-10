@@ -25,22 +25,20 @@ jobs:
       - name: List Repository Contents and Locate Project
         id: locate_project
         run: |
-          echo "=== محتويات المستودع الحالية ==="
-          ls -la
-          echo "==============================="
-          
-          # البحث بعمق عن ملف settings.gradle.kts أو settings.gradle
           SETTINGS_FILE=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
-          
           if [ -z "$SETTINGS_FILE" ]; then
-            echo "::error::ملفات المشروع غير موجودة في المستودع! يرجى رفع مجلد app وملفات gradle إلى GitHub."
-            find . -type f | head -n 30
+            echo "::error::لم يتم العثور على ملف settings.gradle.kts!"
             exit 1
           fi
-
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "تم العثور على المشروع في المسار: $PROJECT_DIR"
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
+
+      # إنشاء ملفات البيئة فوراً في المجلد لتفادي أي نقص
+      - name: Setup Environment Files
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" > .env
+          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env.example
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -49,16 +47,9 @@ jobs:
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
           if [ ! -f "gradlew" ] || [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "جاري إنشاء gradle wrapper..."
             gradle wrapper --gradle-version 8.8
           fi
           chmod +x gradlew
-
-      - name: Create .env file
-        working-directory: ${{ steps.locate_project.outputs.project_dir }}
-        run: |
-          touch .env
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'MY_GEMINI_API_KEY' }}" >> .env
 
       - name: Build APK with Gradle
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
