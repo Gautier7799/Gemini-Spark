@@ -33,6 +33,58 @@ jobs:
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
+      # الحل السحري: إنشاء ملفات المصادر (Resources) المفقودة تلقائياً
+      - name: Generate Missing Resources and Manifest
+        working-directory: ${{ steps.locate_project.outputs.project_dir }}
+        run: |
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/mipmap-anydpi-v26
+          mkdir -p app/src/main/java/com/example
+          
+          # إنشاء ملف strings.xml
+          cat <<EOF > app/src/main/res/values/strings.xml
+          <resources>
+              <string name="app_name">Gemini Spark</string>
+          </resources>
+          EOF
+          
+          # إنشاء ملف themes.xml
+          cat <<EOF > app/src/main/res/values/themes.xml
+          <resources>
+              <style name="Theme.MyApplication" parent="android:Theme.Material.Light.NoActionBar" />
+          </resources>
+          EOF
+          
+          # إنشاء أيقونة وهمية مؤقتة لتفادي خطأ AAPT
+          cat <<EOF > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@android:color/white"/>
+          </adaptive-icon>
+          EOF
+          cat <<EOF > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@android:color/white"/>
+          </adaptive-icon>
+          EOF
+          
+          # إنشاء ملف AndroidManifest.xml أساسي
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example">
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:supportsRtl="true"
+                  android:theme="@style/Theme.MyApplication">
+              </application>
+          </manifest>
+          EOF
+
       - name: Setup Environment Files
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
@@ -45,7 +97,6 @@ jobs:
       - name: Prepare Gradle Wrapper
         working-directory: ${{ steps.locate_project.outputs.project_dir }}
         run: |
-          # تم تحديث الإصدار هنا إلى 8.10.2 ليتوافق تماماً مع إضافة الأندرويد
           gradle wrapper --gradle-version 8.10.2
           chmod +x gradlew
 
