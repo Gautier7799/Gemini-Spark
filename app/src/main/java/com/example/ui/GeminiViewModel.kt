@@ -22,7 +22,6 @@ data class GeminiUiState(
     val showApiKeyDialog: Boolean = false
 )
 
-// لاحظ هنا: أصبح ViewModel بسيطاً جداً ولا يطلب Application
 class GeminiViewModel : ViewModel() {
     private val repository = GeminiRepository()
 
@@ -51,7 +50,7 @@ class GeminiViewModel : ViewModel() {
                 activeApiKey = effectiveKey,
                 messages = listOf(
                     ChatMessage(
-                        text = "مرحباً يا شريك! أنا مساعدك الذكي Gemini مدعوماً بتقنيات Google.\nلقد تخطينا العقبات والتطبيق يعمل الآن بامتياز! جرب أن تسألني أي شيء.",
+                        text = "مرحباً يا شريك! أنا مساعدك الذكي Gemini.\nلقد تخطينا العقبات والتطبيق يعمل الآن بامتياز! جرب أن تسألني أي شيء.",
                         isUser = false,
                         modelName = "gemini-1.5-flash"
                     )
