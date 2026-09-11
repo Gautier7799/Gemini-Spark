@@ -15,8 +15,7 @@ import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     
-    // الحل النهائي: هذه الطريقة القياسية والأكثر أماناً في أندرويد 
-    // لتهيئة الـ ViewModel وضمان عدم انهيار التطبيق
+    // الطريقة الأساسية، لا تحتاج لأي إعدادات معقدة
     private val viewModel: GeminiViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +27,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // نمرر الـ ViewModel الجاهز والمستقر للواجهة
                     GeminiScreen(viewModel = viewModel)
                 }
             }
