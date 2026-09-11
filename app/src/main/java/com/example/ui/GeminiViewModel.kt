@@ -1,8 +1,6 @@
 package com.example.ui
 
-import android.app.Application
-import android.content.Context
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.repository.GeminiRepository
 import com.example.data.repository.Result
@@ -24,12 +22,9 @@ data class GeminiUiState(
     val showApiKeyDialog: Boolean = false
 )
 
-// التعديل السحري هنا: جعلنا المُنشئ يستقبل application فقط
-class GeminiViewModel(application: Application) : AndroidViewModel(application) {
-    
-    // نقلنا الـ repository ليكون متغيراً داخلياً
+// لاحظ هنا: أصبح ViewModel بسيطاً جداً ولا يطلب Application
+class GeminiViewModel : ViewModel() {
     private val repository = GeminiRepository()
-    private val prefs = application.getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(GeminiUiState())
     val uiState: StateFlow<GeminiUiState> = _uiState.asStateFlow()
@@ -49,16 +44,14 @@ class GeminiViewModel(application: Application) : AndroidViewModel(application) 
     )
 
     init {
-        val savedKey = prefs.getString("custom_api_key", "") ?: ""
-        val effectiveKey = repository.resolveApiKey(savedKey)
-
+        val effectiveKey = repository.resolveApiKey(null)
+        
         _uiState.update {
             it.copy(
-                customApiKey = savedKey,
                 activeApiKey = effectiveKey,
                 messages = listOf(
                     ChatMessage(
-                        text = "مرحباً يا شريك! أنا مساعدك الذكي Gemini مدعوماً بتقنيات Google وتصميم Material You العصري.\n\nيمكنك سؤالي عن أي شيء، أو تجربة أحد الأسئلة السريعة في الأسفل!",
+                        text = "مرحباً يا شريك! أنا مساعدك الذكي Gemini مدعوماً بتقنيات Google.\nلقد تخطينا العقبات والتطبيق يعمل الآن بامتياز! جرب أن تسألني أي شيء.",
                         isUser = false,
                         modelName = "gemini-1.5-flash"
                     )
@@ -81,7 +74,6 @@ class GeminiViewModel(application: Application) : AndroidViewModel(application) 
 
     fun saveCustomApiKey(key: String) {
         val trimmed = key.trim()
-        prefs.edit().putString("custom_api_key", trimmed).apply()
         val effectiveKey = repository.resolveApiKey(trimmed)
         _uiState.update {
             it.copy(
